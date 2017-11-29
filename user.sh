@@ -5,7 +5,7 @@ if [ $# -lt 3 ]
 		echo "Zu wenige Parameter angegeben. Es müssen Nutzername, User-ID, Kommentar und Passwort angegeben werden" #Fehlermeldung wenn nur ein Parameter angegeben ist
 		exit 1
 	else
-	if [ $(cat /etc/passwd | grep $1 | cut -f1 -d: | wc -w) -gt 0 ]							#Prüfen ob nutzer schon besteht
+	if [ $(cat /etc/passwd | cut -f1 -d: | grep $1 | wc -w) -gt 0 ]										#Prüfen ob Nutzer schon besteht
 		then
 			echo "Nutzer besteht bereits"													#Fehlermeldung ausgeben das der Nutzer bereits existiert
 			exit 2

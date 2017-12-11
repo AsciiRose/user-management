@@ -2,113 +2,122 @@
 #Nennt dem Kernel den Pfad des Interpreters, der verwendet werden soll
 if [ $# -lt 3 ]
 then
-	echo "Zu wenige Parameter angegeben. Es müssen Nutzername, Kommentar und Passwort angegeben werden"		#Fehlermeldung wenn nur ein Parameter angegeben ist
+    #Fehlermeldung wenn zu wenige Parameter angegeben sind
+	echo "Zu wenige Parameter angegeben. Es müssen Nutzername, Kommentar und Passwort angegeben werden"
+	#Abbrechen
 	exit 1
 else
-	
-	searchUser $1															#Prüfen ob Nutzer schon besteht
-	
-	if [ $? -eq 0 ]									
-	then																										
+    #Prüfen ob Nutzer schon besteht
+	searchUser $1
+
+    #Brüft ob es einen Fehler gab
+	if [ !$? -eq 0 ]
+	then
+        #Abbrechen
 		exit 2
 	else
-		getUserID
-	
-		if[ $? -eq 0 ]
+        #Sucht eine neue freie User ID
+		getNewID passwd
+		#Speichert ID in einer Variable
+		userID = $ID
+
+        #Brüft ob es einen Fehler gab
+		if[ !$? -eq 0 ]
 		then
+            #Abbrechen
 			exit 3
 		else
-			getGroupID
-			
-			if[ $? -eq 0 ]
+            #Sucht eine neue freie Group ID
+			getNewID group
+			#Speichert ID in einer Variable
+            groupID = $ID
+
+            #Brüft ob es einen Fehler gab
+			if[ !$? -eq 0 ]
 			then
+                #Abbrechen
 				exit 4
 			else
-				echo "$userName:x:$userID:$groupID:$2:/home/$userName:/bin/bash" >> /etc/passwd					#Nutzer ini passwd Datei anlegen -> Name:Passwort:User-ID:Group-ID:Kommentar:Verzeichnis:Shell  
-				
-				if[ $? -ne 0 ]
-				then
-					echo "$userName:x:$groupID:" >> /etc/group													#Gruppe für Nutzer anlegen
-				else
-				fi	
-			
-				mkdir /home/$userName																			#Homeverzeichnis anlegen 
-					
-				chown $userName:$userName /home/$userName														#Nutzer die Besitzrechte auf das Verzeichnis übertragen
-				chmod 700 /home/$userName																		#Nutzer Schreibrechte in eigenem Homeverzeichnis geben
-					
-				echo -e "$4\n$4" | (passwd $userName)															#Passwort für Nutzer anlegen
+                #Prüft ob Gruppe bereits existiert
+                #Legt ggf. eine neue Gruppe an
+                checkAndAddGroup $userName $groupID
+
+                #Nutzer in passwd Datei anlegen -> Name:Passwort:User-ID:Group-ID:Kommentar:Verzeichnis:Shell
+				echo "$userName:x:$userID:$groupID:$2:/home/$userName:/bin/bash" >> /etc/passwd
+
+                #Homeverzeichnis anlegen
+				mkdir /home/$userName
+
+                #Nutzer die Besitzrechte auf das Verzeichnis übertragen
+				chown $userName:$userName /home/$userName
+				#Nutzer Schreibrechte in eigenem Homeverzeichnis geben
+				chmod 700 /home/$userName
+
+                #Passwort für Nutzer anlegen
+				echo -e "$4\n$4" | (passwd $userName)
 			fi
 		fi
 	fi
 fi
 
-function getGroupID()
+function getNewID()
 {
-	groupID = $(cat /etc/passwd | grep -e '^.\{4\}$' | cut -f4 -d: | sort -n | head -1)
-			
-	while[ $(cat /etc/passwd | cut -f4 -d:) -ne $groupID ]
-	do
-		groupID = $groupID + 1
-		
-		if( $groupID -eq "65536")
-		then
-			echo "Maximale Group-ID erreicht!"
-			exit 1
-		else
-			export groupID
-		fi
-	done
-}
+    #Kleinste belegte 4 stellige ID suchen
+	ID = $(cat /etc/$1 | cut -f4 -d: | grep -e '^.\{4\}$' | sort -n | head -1)
 
-function getUserID()
-{
-	userID = $(cat /etc/passwd | grep -e '^.\{4\}$' | cut -f3 -d: | sort -n | head -1)
-			
-	while[ $(cat /etc/passwd | cut -f3 -d:) -ne $userID ]
+    #Schleife bis ID frei ist
+	while[ $(cat /etc/$1 | cut -f4 -d:) -ne $ID ]
 	do
-		$userID = $userID + 1
-		
-		if( $userID -eq "65536")
+        #ID erhöhen
+		(($ID++))
+
+        #Abfangen der größten ID -> Merke: Max ID = 65536
+		if( $ID -eq "10000")
 		then
-			echo "Maximale User-ID erreicht!"
+            #Fehlermeldung wenn Max ID erreicht ist
+			echo "Maximale $1 ID erreicht!"
+			#Abbrechen
 			exit 1
 		else
-			export userID
+            #ID exportieren
+			export $ID
 		fi
 	done
 }
 
 function searchUser()
 {
-	if [ $(cat /etc/passwd | grep $1 | cut -f1 -d: | wc -w) -gt 0 ]											#Prüfen ob Nutzer schon besteht
+    #Prüfen ob Nutzer schon besteht
+	if [ $(cat /etc/passwd | cut -f1 -d: | grep $1 | wc -w) -gt 0 ]
 	then
-		echo "Nutzer besteht bereits"																		#Fehlermeldung ausgeben das der Nutzer bereits existiert
+        #Fehlermeldung ausgeben das der Nutzer bereits existiert
+		echo "Nutzer besteht bereits"
+		#Abbrechen
 		exit 1
 	else
+        #Username speichern
 		userName = $1
-		export userName
+		#Username exportieren
+		export $userName
 	fi
 }
 
 function checkAndAddGroup()
 {
-	if [ $(cat /etc/group | grep $1 | cut -f1 -d: | wc -w) -gt 0 ]											
+    #Prüft ob Gruppe bereits besteht
+	if [ $(cat /etc/group | cut -f1 -d: | grep $1 | wc -w) -gt 0 ]
 	then
-		echo "Gruppe besteht bereits"																		
+        #Meldung, dass Gruppe bereits besteht
+		echo "Gruppe besteht bereits"
+		#Gruppenummer abspeichern
 		groupNumber = $(cat /etc/group | grep $1 | cut -f3 -d:)
+		#Gruppennummer exportieren
 		export groupNumber
 	else
+        #Meldung, dass Gruppe noch nicht besteht
 		echo "Gruppe besteht noch nicht"
-		getGroupID
-			
-		if[ $? -eq 0 ]
-		then
-			exit 1
-		else
-			echo "Gruppe wird angelegt"
-			echo "$1:x:$groupID:" >> /etc/group																
-			export 0
-		fi
+
+		#Gruppe wird angelegt
+        echo "$1:x:$2:" >> /etc/group
 	fi
 }

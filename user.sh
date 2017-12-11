@@ -11,7 +11,7 @@ else
 	searchUser $1
 
     #Brüft ob es einen Fehler gab
-	if [ !$? -eq 0 ]
+	if [ ! $? -eq 0 ]
 	then
         #Abbrechen
 		exit 2
@@ -22,7 +22,7 @@ else
 		userID = $ID
 
         #Brüft ob es einen Fehler gab
-		if[ !$? -eq 0 ]
+		if[ ! $? -eq 0 ]
 		then
             #Abbrechen
 			exit 3
@@ -33,7 +33,7 @@ else
             groupID = $ID
 
             #Brüft ob es einen Fehler gab
-			if[ !$? -eq 0 ]
+			if[ ! $? -eq 0 ]
 			then
                 #Abbrechen
 				exit 4
@@ -49,7 +49,7 @@ else
 				mkdir /home/$userName
 
                 #Nutzer die Besitzrechte auf das Verzeichnis übertragen
-				chown $userName:$userName /home/$userName
+				chown $userName:$groupName /home/$userName
 				#Nutzer Schreibrechte in eigenem Homeverzeichnis geben
 				chmod 700 /home/$userName
 
@@ -69,7 +69,7 @@ function getNewID()
 	while[ $(cat /etc/$1 | cut -f4 -d:) -ne $ID ]
 	do
         #ID erhöhen
-		(($ID++))
+		ID = ID+1
 
         #Abfangen der größten ID -> Merke: Max ID = 65536
 		if( $ID -eq "10000")
@@ -104,20 +104,29 @@ function searchUser()
 
 function checkAndAddGroup()
 {
+	#Gruppenname speichern
+	groupName = $1
+		
     #Prüft ob Gruppe bereits besteht
 	if [ $(cat /etc/group | cut -f1 -d: | grep $1 | wc -w) -gt 0 ]
 	then
         #Meldung, dass Gruppe bereits besteht
 		echo "Gruppe besteht bereits"
+		
 		#Gruppenummer abspeichern
 		groupNumber = $(cat /etc/group | grep $1 | cut -f3 -d:)
+		
 		#Gruppennummer exportieren
+		#Gruppenname exportieren
 		export groupNumber
+		export groupName
 	else
         #Meldung, dass Gruppe noch nicht besteht
 		echo "Gruppe besteht noch nicht"
 
 		#Gruppe wird angelegt
         echo "$1:x:$2:" >> /etc/group
+		#Gruppenname exportieren
+		export groupName
 	fi
 }

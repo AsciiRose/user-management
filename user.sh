@@ -71,7 +71,7 @@ else
 				echo "$inputUserName:x:$userID:$groupID:$3:$homePath$inputUserName:/bin/bash" >> $userPath
 
                 #Homeverzeichnis anlegen
-				mkdir $homePath$inputUserName
+				mkdir -p $homePath$inputUserName
 
                 #Nutzer die Besitzrechte auf das Verzeichnis übertragen -> chown Benutzer:Gruppe Datei
 				chown $inputUserName:$inputGroupName $homePath$inputUserName

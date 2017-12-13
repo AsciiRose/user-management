@@ -7,11 +7,11 @@ function setEnv() {
 	then 
 		echo "We are in the debug scenario. Look for you stuff in /tmp"
 		defaultPath="/tmp/"
+		homePath="/tmp/home/"
 	else
 		defaultPath="/etc/"
+		homePath="/home/"
 	fi
-
-	homePath="/home/"
 	
 	groupFileName="group"
 	userFileName="passwd"

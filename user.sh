@@ -1,27 +1,90 @@
 #!/bin/bash
 #Nennt dem Kernel den Pfad des Interpreters, der verwendet werden soll
-if [ $# -lt 3 ]
+
+#Benutzt andere Dateien in diesem Skript
+source env.sh
+source function.sh
+
+if [ $# -lt 4 ]
+then
+    #Fehlermeldung wenn zu wenige Parameter angegeben sind
+	echo "Zu wenige Parameter angegeben. Es müssen Nutzername, Gruppenname, Kommentar und Passwort angegeben werden"
+	#Abbrechen
+	return 1
+else
+	#Setzt Pfade über eine andere Datei
+	setEnv
+
+	#Variablen für die Übergabewerte
+	inputUserName=$1
+	inputGroupName=$2
+	inputComment=$3
+	inputPassword=$4
+
+    #Prüfen ob Nutzer schon besteht
+	searchUser $inputUserName
+	
+    #Brüft ob es einen Fehler gab
+	if [ ! $? -eq 0 ]
 	then
-		echo "Zu wenige Parameter angegeben. Es müssen Nutzername, User-ID, Kommentar und Passwort angegeben werden" #Fehlermeldung wenn nur ein Parameter angegeben ist
-		exit 1
+        #Abbrechen
+		exit 2
 	else
-	if [ $(cat /etc/passwd | cut -f1 -d: | grep $1 | wc -w) -gt 0 ]										#Prüfen ob Nutzer schon besteht
-		then
-			echo "Nutzer besteht bereits"													#Fehlermeldung ausgeben das der Nutzer bereits existiert
-			exit 2
+        #Sucht eine neue freie User ID
+		getNewID $userFileName
+		
+        #Brüft ob es einen Fehler gab
+		if [ ! $? -eq 0 ]
+	    then
+			echo "getNewID Error"
+			
+            #Abbrechen
+			exit 3
 		else
-			if [ $(cat /etc/passwd | grep $1 | cut -f3 -d: | wc -w) -eq $3 ]
+			#Speichert ID in einer Variable
+			userID=$ID
+			
+            #Sucht eine neue freie Group ID
+			getNewID $groupFileName
+
+            #Brüft ob es einen Fehler gab
+			if [ ! $? -eq 0 ]
 			then
-				echo "User-ID besteht bereits"													#Fehlermeldung ausgeben das der Nutzer bereits existiert
-			    exit 2
+				echo "getNewID Error"
+			
+                #Abbrechen
+				exit 4
 			else
-				echo "$1:x:$2:501:$3:/home/$1:/bin/bash" >> /etc/passwd						#Nutzer in passwd datei anlegen -> Name:Passwort:User-ID:Group-ID:Kommentar:Verzeichnis:Shell  
-				echo "$1:x:501:" >> /etc/group													#gruppe für nutzer anlegen
-				mkdir /home/$1																	#Home verzeichnis anlegen 
-				chown $1:$1 /home/$1															#nutzer die besitzrechte auf das verzeichnis übertragen
-				chmod 700 /home/$1																#nutzer schreibrechte in eigenem Homeverzeichnis geben
-				echo -e "$4\n$4" | (passwd $1)													#Passwort für nutzer anlegen
+				#Speichert ID in einer Variable
+				groupID=$ID
+				
+                #Prüft ob Gruppe bereits existiert
+                #Legt ggf. eine neue Gruppe an
+                checkAndAddGroup $inputGroupName $groupID
+				
+				if [ ! -z $groupNumber ] 
+				then
+					groupID=$groupNumber
+				fi
+
+                #Nutzer in passwd Datei anlegen -> Name:Passwort:User-ID:Group-ID:Kommentar:Verzeichnis:Shell
+				echo "$inputUserName:x:$userID:$groupID:$3:$homePath$inputUserName:/bin/bash" >> $userPath
+
+                #Homeverzeichnis anlegen
+				mkdir -p $homePath$inputUserName
+
+                #Nutzer die Besitzrechte auf das Verzeichnis übertragen -> chown Benutzer:Gruppe Datei
+				chown $inputUserName:$inputGroupName $homePath$inputUserName
+				#Nutzer Schreibrechte in eigenem Homeverzeichnis geben
+				chmod 700 $homePath$inputUserName
+
+                #Passwort für Nutzer anlegen
+				echo -e "$4\n$4" | ($userFileName $inputUserName)
 			fi
+		fi
 	fi
 fi
+
+
+
 

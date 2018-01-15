@@ -5,7 +5,6 @@
 source env.sh
 source function.sh
 
-
 if [ $# -lt 1 ]
 then
     #Fehlermeldung wenn zu wenige Parameter angegeben sind
@@ -16,10 +15,15 @@ else
 	if [ -z $loginshell ]; then
 		loginshell="/bin/bash"	
 	fi 
-	echo "Die LoginShell ist: "$loginshell"
+	echo "Die LoginShell ist: "$loginshell""
 
 	for [ username in $* ]
 	do
+		if [ -z $groupname ]
+		then
+			groupname=$username
+		fi
+		
 		groupname=$username
 	
 		#Setzt Pfade über eine andere Datei
@@ -70,8 +74,6 @@ else
 					then
 						groupID=$groupNumber
 					fi
-					
-					
 
 					#Nutzer in passwd Datei anlegen -> Name:Passwort:User-ID:Group-ID:Kommentar:Verzeichnis:Shell
 					echo "$username:x:$userID:$groupID:$3:$homePath$username:$loginshell" >> $userPath
@@ -97,7 +99,3 @@ else
 		fi
 	done
 fi
-
-
-
-

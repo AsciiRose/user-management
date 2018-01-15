@@ -81,11 +81,13 @@ function getNewID()
 
 function getRandomPassword()
 {
-	if [ -f /usr/bin/pwgen.sh ] 
+	echo which pwgen
+
+	if [ $? -eq 0 ] 
 	then
 		password=$(pwgen -s -y 8)
 	else
-		password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+		password=$(cat /dev/urandom | tr -dc '[:graph:]' | fold -w 8 | head -n 1)
 	fi
 	
 	export password

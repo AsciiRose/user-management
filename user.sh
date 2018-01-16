@@ -15,12 +15,15 @@ else
 	if [ -z $loginshell ]; then
 		loginshell="/bin/bash"	
 	fi 
-	echo "Die LoginShell ist: "$loginshell""
+	
+	echo "Die LoginShell ist: $loginshell"
 
 	for [ username in $* ]
 	do
-		if [ -z $groupname ]
+		if [ ! -z $externGroupname ]
 		then
+			groupname=$externGroupname
+		else
 			groupname=$username
 		fi
 		
@@ -98,4 +101,4 @@ else
 			fi
 		fi
 	done
-fi
+fi 

@@ -92,3 +92,10 @@ function getRandomPassword()
 	
 	export password
 }
+
+function getRandomUsername()
+{
+	username=$(cat /dev/urandom | tr -dc '[:alpha:]' | fold -w 8 | head -n 1)
+	
+	export username
+}

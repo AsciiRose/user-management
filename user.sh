@@ -12,12 +12,22 @@ then
 	#Abbrechen
 	return 1
 else
+	if [ -z $loginshell ]; then
+		loginshell="/bin/bash"	
+	fi 
+	
+	echo "Die LoginShell ist: $loginshell"
+
 	for [ username in $* ]
 	do
-		if [ -z $groupname ]
+		if [ ! -z $externGroupname ]
 		then
+			groupname=$externGroupname
+		else
 			groupname=$username
 		fi
+		
+		groupname=$username
 	
 		#Setzt Pfade über eine andere Datei
 		setEnv $username
@@ -67,11 +77,6 @@ else
 					then
 						groupID=$groupNumber
 					fi
-					
-					if [ -z $loginshell ]
-					then
-						loginshell="/bin/bash"
-					fi
 
 					#Nutzer in passwd Datei anlegen -> Name:Passwort:User-ID:Group-ID:Kommentar:Verzeichnis:Shell
 					echo "$username:x:$userID:$groupID:$3:$homePath$username:$loginshell" >> $userPath
@@ -96,8 +101,4 @@ else
 			fi
 		fi
 	done
-fi
-
-
-
-
+fi 
